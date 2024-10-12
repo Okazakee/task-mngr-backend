@@ -80,7 +80,7 @@ router.post('/register', async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Email or username already exists' });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   // Save user to the database
   await registerUser(email, username, hashedPassword);

@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
+import bcrypt from 'bcrypt';
 import { authenticateJWT } from '../services/authMiddleware';
-import { uploadPropic } from '../models/usersModel';
+import { uploadPropic, changeUsername, checkUser, changeEmail, changePassword } from '../models/usersModel';
 
 const storage = multer.memoryStorage(); // Store the file in memory as a buffer
 const upload = multer({ storage });
@@ -27,9 +28,84 @@ router.post('/upload-propic', authenticateJWT, upload.single('propic'), async (r
 });
 
 // change username
+router.post('/changeUsername', authenticateJWT, async (req: Request, res: Response) => {
+  const { username, newUsername } = req.body;
+
+  const user = await checkUser(username);
+
+  if (user.length === 0) {
+    return res.status(400).json({ message: 'Missing user' });
+  }
+
+  const userID = user[0].id;
+
+  if (!newUsername) {
+    return res.status(400).json({ message: 'Missing new username' });
+  }
+
+  if (username === newUsername) {
+    return res.status(400).json({ message: 'No username change needed' });
+  }
+
+  try {
+    await changeUsername(userID, newUsername);
+
+    res.status(200).json({ message: 'Username changed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error changing username' });
+  }
+});
 
 // change email
+router.post('/changeEmail', authenticateJWT, async (req: Request, res: Response) => {
+  const { username, newEmail } = req.body;
+
+  const user = await checkUser(username);
+
+  if (user.length === 0) {
+    return res.status(400).json({ message: 'Missing user' });
+  }
+
+  if (!newEmail) {
+    return res.status(400).json({ message: 'Missing new email' });
+  }
+
+  const userID = user[0].id;
+
+  try {
+    await changeEmail(userID, newEmail);
+
+    res.status(200).json({ message: 'Email changed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error changing Email' });
+  }
+});
 
 // change pw
+router.post('/changePassword', authenticateJWT, async (req: Request, res: Response) => {
+  const { username, newPassword } = req.body;
+
+  const user = await checkUser(username);
+
+  if (user.length === 0) {
+    return res.status(400).json({ message: 'Missing user' });
+  }
+
+  if (!newPassword) {
+    return res.status(400).json({ message: 'Missing new password' });
+  }
+
+  const userID = user[0].id;
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  try {
+    await changePassword(userID, hashedPassword);
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error changing password' });
+  }
+});
 
 export default router;
