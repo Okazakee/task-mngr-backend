@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import cookieParser from 'cookie-parser';
 import taskRoutes from './routes/taskRoutes';
 import userRoutes from './routes/userRoutes';
 import authRoutes from './routes/authRoutes';
@@ -8,43 +7,27 @@ import { rateLimit } from 'express-rate-limit';
 import { authenticateJWT } from './services/authMiddleware';
 import { localhost, exposed } from './services/envsExports';
 
-const app = express();
-
-// Ensure the origins are properly defined
-const allowedOrigins = [
-  localhost,
-  exposed
-].filter(origin => origin !== undefined); // Filter out any undefined values
-
 // global rate limit
 const limiter = rateLimit({
   windowMs: 1000, // 1 second
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 5, // limit each IP to 10 requests per windowMs
 });
+
+const cookieParser = require('cookie-parser');
+
+const app = express();
 
 app.use(limiter);
 
-// CORS configuration
+// cors only for frontend
 app.use(cors({
-  origin: function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Added OPTIONS for preflight requests
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'] // Explicitly specify allowed headers
+  origin: [localhost || 'http://localhost:5173', exposed || 'https://task-mngr-frontend.vercel.app/'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
 }));
 
-// Enable pre-flight requests for all routes
-app.options('*', cors());
-
 app.use(cookieParser());
+
 app.use(express.json());
 
 // Unprotected auth routes (registration, login, etc.)
