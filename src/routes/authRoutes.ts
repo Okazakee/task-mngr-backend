@@ -32,7 +32,7 @@ router.get('/verify', authenticateJWT, (req: Request, res: Response) => {
   res.cookie('localAuth', true, {
     httpOnly: false,                                // not needed, this will be used by client to check
     secure: production ? true : false,              // token validity only once a day
-    sameSite: 'strict',
+    sameSite: 'none',
     maxAge: 86400000,
   })
 
@@ -44,7 +44,7 @@ router.get('/logout', authenticateJWT, (req: Request, res: Response) => {
   res.cookie('authToken', '', {
     httpOnly: true,
     secure: production ? true : false,
-    sameSite: 'strict',
+    sameSite: 'none',
     maxAge: 0,
   });
 
@@ -126,7 +126,7 @@ router.post('/login', async (req: Request, res: Response) => {
   res.cookie('authToken', token, {
     httpOnly: true,                                 // Prevent JavaScript access in client
     secure: production ? true : false,              // Ensure cookie is only sent over HTTPS (prod only)
-    sameSite: 'strict',                             // Protect against CSRF attacks
+    sameSite: 'none',                             // Protect against CSRF attacks
     maxAge: staylogged ? 31536000000 : undefined,   // 1 year expiry or session
   });
 
