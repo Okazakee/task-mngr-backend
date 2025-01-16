@@ -3,8 +3,8 @@ import bcrypt from 'bcrypt';
 
 async function initDb() {
   const db = await openDb();
-
-  // Create the users and tasks tables
+  
+  // Create tables (this is safe, IF NOT EXISTS prevents errors)
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,7 +14,7 @@ async function initDb() {
       propic BLOB
     );
   `);
-
+  
   await db.exec(`
     CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,31 +25,38 @@ async function initDb() {
     );
   `);
 
-  // Hash the password before inserting into the database
-  const hashedPassword = await bcrypt.hash('123', 10);
-
-  // Insert a fixed user with an email, username, and hashed password
-  await db.run(`
-    INSERT INTO users (email, username, password)
-    VALUES ('user@example.com', 'user', ?);
-  `, [hashedPassword]);
-
-  // Retrieve the ID of the inserted user
-  const user = await db.get('SELECT id FROM users WHERE email = ?', ['user@example.com']);
-  const userId = user.id;
-
-  // Insert tasks and associate them with the user's ID
-  await db.run(`
-    INSERT INTO tasks (text, status, user_id) VALUES ('task1', 'done', ?);
-  `, [userId]);
-  await db.run(`
-    INSERT INTO tasks (text, status, user_id) VALUES ('task2', 'on-hold', ?);
-  `, [userId]);
-  await db.run(`
-    INSERT INTO tasks (text, status, user_id) VALUES ('task3', 'pending', ?);
-  `, [userId]);
-
-  console.log('Database initialized with one user and three tasks');
+  // Check if the test user already exists
+  const existingUser = await db.get('SELECT id FROM users WHERE email = ?', ['user@example.com']);
+  
+  if (!existingUser) {
+    // Only create test data if it doesn't exist
+    const hashedPassword = await bcrypt.hash('123', 10);
+    
+    const result = await db.run(`
+      INSERT INTO users (email, username, password)
+      VALUES ('user@example.com', 'user', ?);
+    `, [hashedPassword]);
+    
+    const userId = result.lastID;
+    
+    // Insert sample tasks only for new users
+    const sampleTasks = [
+      ['task1', 'done'],
+      ['task2', 'on-hold'],
+      ['task3', 'pending']
+    ];
+    
+    for (const [text, status] of sampleTasks) {
+      await db.run(`
+        INSERT INTO tasks (text, status, user_id) 
+        VALUES (?, ?, ?);
+      `, [text, status, userId]);
+    }
+    
+    console.log('Database initialized with test user and tasks');
+  } else {
+    console.log('Database already initialized, skipping test data creation');
+  }
 }
 
 initDb().catch(console.error);
