@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env.local' });
+require('dotenv').config({ path: '.env.local' });
 
 export const jwtSecret = process.env.JWT_SECRET;
 export const production = process.env.PRODUCTION;
