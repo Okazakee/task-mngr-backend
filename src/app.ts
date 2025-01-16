@@ -21,7 +21,7 @@ app.use(limiter);
 
 // cors only for frontend
 app.use(cors({
-  origin: [localhost || 'http://localhost:5173', exposed || 'https://task-mngr-frontend.vercel.app/'],
+  origin: [localhost || 'http://localhost:5173', exposed || 'https://task-mngr-frontend.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
